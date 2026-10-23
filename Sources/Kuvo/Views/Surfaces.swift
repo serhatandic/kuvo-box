@@ -133,6 +133,8 @@ private struct ContentCard: ViewModifier {
         content
             // On a solid card, text in its own colors: the glass's vibrant ones wash black out to gray.
             .transformEnvironment(\.backgroundMaterial) { $0 = nil }
+            // The whole column, even around content that doesn't fill it, like the empty state's steps.
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background {
                 shape
                     .fill(Surface.cardFill(scheme))
