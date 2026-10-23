@@ -8,9 +8,7 @@ struct ContentView: View {
     @SceneStorage("imageSelection") private var imageSelection: String?
     @SceneStorage("volumeSelection") private var volumeSelection: String?
     @State private var columns = NavigationSplitViewVisibility.all
-    @State private var sidebarWidth: CGFloat = 0
     @AppStorage(Appearance.key) private var appearance = Appearance.system
-    @Environment(\.colorScheme) private var scheme
 
     private var selected: Container? {
         store.containers.first { $0.id == selection }
@@ -59,8 +57,8 @@ struct ContentView: View {
                     ? "docker, Docker Compose and other tools will use Kuvo Box in every terminal.\n\nIt's easy to undo: opening Docker Desktop switches them back to it."
                     : "docker, Docker Compose and other tools will use Kuvo Box in every terminal.\n\nTo undo it, run: docker context use default")
             }
-            // Frosted and tinted by the wallpaper; light mode adds a tinted layer on top (see lightGlass).
-            .containerBackground(.thinMaterial, for: .window)
+            // One sheet of glass behind sidebar and detail, as in Kuvo Code.
+            .windowGlass()
     }
 
     @ViewBuilder private var content: some View {
@@ -69,32 +67,15 @@ struct ContentView: View {
             case .connected:
                 NavigationSplitView(columnVisibility: $columns) {
                     Sidebar(section: $section, selection: $selection, imageSelection: $imageSelection, volumeSelection: $volumeSelection)
-                        .lightGlass() // The sidebar draws its own material; tint it the same.
                         // Also as a frame: without saved split state, the column width alone is ignored.
                         // No maximum here: the contents fill the column, and SidebarWidthLimits caps it.
                         .frame(minWidth: 250, idealWidth: 290, maxWidth: .infinity)
                         .navigationSplitViewColumnWidth(min: 250, ideal: 290, max: 420)
                         .background(SidebarWidthLimits(min: 250, max: 420))
-                        .onGeometryChange(for: CGFloat.self, of: { $0.frame(in: .global).maxX }) { sidebarWidth = $0 }
                 } detail: {
-                    detail
+                    detail.contentCard()
                 }
-                // One continuous sheet of tinted glass behind sidebar and detail (light mode).
-                .lightGlass()
                 .focusedSceneValue(\.sidebarSection, $section)
-                .overlay(alignment: .topLeading) {
-                    // The system divider is pure black in dark mode and reads as heavy on
-                    // translucent panes; cover it with a soft seam. Dragging still works.
-                    if columns != .detailOnly, sidebarWidth > 0 {
-                        Rectangle()
-                            .fill(.thinMaterial)
-                            .overlay(Color.primary.opacity(scheme == .light ? 0.06 : 0.1))
-                            .frame(width: 1)
-                            .offset(x: sidebarWidth)
-                            .ignoresSafeArea()
-                            .allowsHitTesting(false)
-                    }
-                }
                 .transition(.opacity)
             case .connecting, .unavailable:
                 EngineStatusView()
@@ -277,8 +258,7 @@ private struct CommandChip: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(.background.secondary, in: .rect(cornerRadius: 8))
-            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.separator, lineWidth: 0.5))
+            .recessedWell(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
         .help("Copy")
@@ -370,6 +350,10 @@ private struct EngineStatusView: View {
 /// stop holding once macOS restores a saved divider position, and SwiftUI also
 /// resets limits set on the AppKit split view item, so this checks after every
 /// resize and moves the divider back when the sidebar is too wide.
+///
+/// It also lets the window's glass show through the sidebar, as in Kuvo Code:
+/// the sidebar's own material, gray over the glass, is masked away, and so is the
+/// divider, since the gap before the content's card sets the two apart.
 private struct SidebarWidthLimits: NSViewRepresentable {
     let min: CGFloat
     let max: CGFloat
@@ -424,6 +408,23 @@ private struct SidebarWidthLimits: NSViewRepresentable {
             if sidebar.frame.width > max + 0.5 {
                 split.setPosition(max, ofDividerAt: 0)
             }
+            clearMaterials(in: sidebar)
+            // Invisible, the divider still takes the drags that resize the sidebar.
+            for divider in split.subviews where !split.arrangedSubviews.contains(divider) && divider.alphaValue != 0 {
+                divider.alphaValue = 0
+            }
         }
+
+        /// A fully transparent mask hides an effect view's material but not the views inside it.
+        private func clearMaterials(in view: NSView) {
+            if let effect = view as? NSVisualEffectView, effect.maskImage !== Self.clear {
+                effect.maskImage = Self.clear
+            }
+            // The material wraps the column's content; nothing to clear further down.
+            guard !(view is NSVisualEffectView) else { return }
+            view.subviews.forEach(clearMaterials)
+        }
+
+        private static let clear = NSImage(size: NSSize(width: 1, height: 1), flipped: false) { _ in true }
     }
 }

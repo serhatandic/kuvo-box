@@ -264,8 +264,8 @@ enum Format {
 
 // MARK: - Panes
 
-/// The one surface every part of the detail view sits on: a soft glass card
-/// with a small header (icon, title, controls) and content directly below.
+/// The one surface every part of the detail view sits on: a panel in the content's
+/// card, with a small header (icon, title, controls) and content directly below.
 struct Pane<Title: View, Accessory: View, Content: View>: View {
     let icon: String
     @ViewBuilder var title: Title
@@ -281,8 +281,7 @@ struct Pane<Title: View, Accessory: View, Content: View>: View {
                     .frame(width: 16)
                     .contentTransition(.symbolEffect(.replace))
                 title
-                    .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(PaneTitleStyle())
+                    .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
                 Spacer(minLength: 8)
                 accessory
@@ -301,13 +300,6 @@ extension Pane {
     nonisolated static var radius: CGFloat { 14 }
 }
 
-/// Primary in dark mode; a softer #333 on white cards in light mode.
-private struct PaneTitleStyle: ShapeStyle {
-    func resolve(in environment: EnvironmentValues) -> Color {
-        environment.colorScheme == .light ? Color(white: 0.2) : .primary
-    }
-}
-
 extension Pane where Title == Text {
     init(icon: String, title: String, @ViewBuilder accessory: () -> Accessory, @ViewBuilder content: () -> Content) {
         self.init(icon: icon, title: { Text(title) }, accessory: accessory, content: content)
@@ -315,8 +307,8 @@ extension Pane where Title == Text {
 }
 
 extension View {
-    /// The pane surface. Dark: frosted glass with a hairline edge. Light:
-    /// near-white cards with a soft, diffuse lift.
+    /// The pane surface, a step apart from the content's card it sits on: Kuvo Code's
+    /// quieter card fill, with a lit edge instead of a gray border.
     func glassCard(cornerRadius: CGFloat) -> some View {
         modifier(PaneSurface(cornerRadius: cornerRadius))
     }
@@ -328,46 +320,9 @@ private struct PaneSurface: ViewModifier {
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius)
-        if scheme == .light {
-            // Near-white cards lifted off the tinted glass by shadow, not by borders.
-            content
-                .background(Color.white.opacity(0.92), in: shape)
-                .background(.regularMaterial, in: shape)
-                .overlay(shape.strokeBorder(.black.opacity(0.035), lineWidth: 0.5))
-                // Light enough that two neighbors' shadows don't darken the gap between them.
-                .shadow(color: .black.opacity(0.05), radius: 10, y: 3)
-                .shadow(color: .black.opacity(0.04), radius: 1.5, y: 0.5)
-        } else {
-            // No shadow: Liquid Glass-style shadows darken the gaps between panes.
-            content
-                .background(.thinMaterial, in: shape)
-                .overlay(shape.strokeBorder(.white.opacity(0.08), lineWidth: 0.5))
-        }
-    }
-}
-
-extension View {
-    /// Light mode only: a tinted layer over the window's blur. Its strength follows
-    /// the wallpaper: thin over a light one (real glass), nearly opaque over a dark
-    /// one (otherwise the blur turns light mode gray). Thicker when inactive.
-    func lightGlass() -> some View {
-        modifier(LightGlass())
-    }
-}
-
-private struct LightGlass: ViewModifier {
-    @Environment(\.colorScheme) private var scheme
-    @Environment(\.controlActiveState) private var activeState
-
-    func body(content: Content) -> some View {
-        content.background {
-            if scheme == .light {
-                let base = 0.92 - 0.37 * Wallpaper.shared.luminance
-                Color(red: 0.935, green: 0.925, blue: 0.945)
-                    .opacity(min(base + (activeState == .inactive ? 0.05 : 0), 0.97))
-                    .ignoresSafeArea()
-            }
-        }
+        content
+            .background(Surface.paneFill(scheme), in: shape)
+            .specularRim(shape)
     }
 }
 
