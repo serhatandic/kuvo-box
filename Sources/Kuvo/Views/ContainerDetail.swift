@@ -35,6 +35,7 @@ struct ContainerDetail: View {
         .navigationTitle(container.name)
         .background { Subtitle(container: container, details: details, busy: busy, archivedAt: archivedAt) }
         .toolbar {
+            ToolbarItem(placement: .navigation) { TitleIcon(systemName: "shippingbox.fill") }
             ToolbarItemGroup {
                 if let port = container.publishedPorts.first, container.isRunning {
                     Button {

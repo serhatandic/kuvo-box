@@ -121,16 +121,21 @@ struct VolumesDetail: View {
                 VolumeDetail(volume: selected, openContainer: openContainer)
                     .id(selected.name)
                     .transition(.opacity.combined(with: .offset(y: 6)))
-            } else if store.volumes?.isEmpty == true {
-                ContentUnavailableView {
-                    Label("No Volumes", systemImage: "cylinder")
-                } description: {
-                    Text("Volumes show up here when a container stores data in one, like a database's files. They keep it after the container is removed.")
-                }
-                .transition(.opacity)
-                .navigationTitle("Volumes")
             } else {
-                Color.clear.navigationTitle("Volumes")
+                Group {
+                    if store.volumes?.isEmpty == true {
+                        ContentUnavailableView {
+                            Label("No Volumes", systemImage: "cylinder")
+                        } description: {
+                            Text("Volumes show up here when a container stores data in one, like a database's files. They keep it after the container is removed.")
+                        }
+                        .transition(.opacity)
+                    } else {
+                        Color.clear
+                    }
+                }
+                .navigationTitle("Volumes")
+                .toolbar { ToolbarItem(placement: .navigation) { TitleIcon(systemName: "cylinder") } }
             }
         }
         .animation(.snappy(duration: 0.28), value: selection)

@@ -127,11 +127,16 @@ struct ContentView: View {
                 ProjectDetail(project: selectedProject)
                     .id(selectedProject)
                     .transition(.opacity.combined(with: .offset(y: 6)))
-            } else if store.containers.isEmpty {
-                EmptyStateView().transition(.opacity)
             } else {
-                ContentUnavailableView("No Selection", systemImage: "shippingbox", description: Text("Pick a container from the sidebar."))
-                    .transition(.opacity)
+                Group {
+                    if store.containers.isEmpty {
+                        EmptyStateView()
+                    } else {
+                        ContentUnavailableView("No Selection", systemImage: "shippingbox", description: Text("Pick a container from the sidebar."))
+                    }
+                }
+                .transition(.opacity)
+                .toolbar { ToolbarItem(placement: .navigation) { TitleIcon(systemName: "shippingbox") } }
             }
         }
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)

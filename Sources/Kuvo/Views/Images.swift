@@ -179,18 +179,23 @@ struct ImagesDetail: View {
                 ImageDetail(image: selected, openContainer: openContainer)
                     .id(selected.id)
                     .transition(.opacity.combined(with: .offset(y: 6)))
-            } else if store.images?.isEmpty == true, store.pulls.isEmpty {
-                ContentUnavailableView {
-                    Label("No Images", systemImage: "square.3.layers.3d")
-                } description: {
-                    Text("Images show up here when you run a container, build an image or pull one.")
-                } actions: {
-                    Button("Pull Image…") { pulling = true }
-                }
-                .transition(.opacity)
-                .navigationTitle("Images")
             } else {
-                Color.clear.navigationTitle("Images")
+                Group {
+                    if store.images?.isEmpty == true, store.pulls.isEmpty {
+                        ContentUnavailableView {
+                            Label("No Images", systemImage: "square.3.layers.3d")
+                        } description: {
+                            Text("Images show up here when you run a container, build an image or pull one.")
+                        } actions: {
+                            Button("Pull Image…") { pulling = true }
+                        }
+                        .transition(.opacity)
+                    } else {
+                        Color.clear
+                    }
+                }
+                .navigationTitle("Images")
+                .toolbar { ToolbarItem(placement: .navigation) { TitleIcon(systemName: "square.3.layers.3d") } }
             }
         }
         .animation(.snappy(duration: 0.28), value: selection)

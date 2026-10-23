@@ -326,7 +326,9 @@ private struct PaneSurface: ViewModifier {
     }
 }
 
-/// A glyph beside the window title, like a folder icon in Finder.
+/// A glyph beside the window title, like a folder icon in Finder. Every detail
+/// view has one: the toolbar starts its items at the content card's edge, and the
+/// glyph's inset brings it and the title after it inside the card.
 struct TitleIcon: View {
     let systemName: String
 
@@ -335,6 +337,7 @@ struct TitleIcon: View {
             .font(.system(size: 18))
             .foregroundStyle(.secondary)
             .frame(width: 28, height: 28)
+            .padding(.leading, 8)
             .accessibilityHidden(true)
     }
 }
