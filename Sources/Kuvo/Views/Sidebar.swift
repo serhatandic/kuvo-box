@@ -102,6 +102,7 @@ struct Sidebar: View {
                 case .project(let name, let containers):
                     ProjectRow(project: name, containers: containers, expanded: expansion(name))
                         .tag("project:\(name)")
+                        .sidebarRow(selected: selection == "project:\(name)")
                     if expansion(name).wrappedValue {
                         ForEach(containers) { row($0).padding(.leading, 16) }
                     }
@@ -116,6 +117,7 @@ struct Sidebar: View {
     private func row(_ container: Container) -> some View {
         ContainerRow(container: container)
             .tag(container.id)
+            .sidebarRow(selected: selection == container.id)
             .transition(.asymmetric(insertion: .push(from: .leading), removal: .opacity.combined(with: .scale(scale: 0.9))))
     }
 
@@ -202,33 +204,73 @@ private struct SectionButtonStyle: ButtonStyle {
 extension View {
     /// The sidebar's list style, shared by every section.
     func sidebarList() -> some View { modifier(SidebarListStyle()) }
-}
 
-private struct SidebarListStyle: ViewModifier {
-    @Environment(\.colorScheme) private var scheme
-
-    func body(content: Content) -> some View {
-        content
-            .listStyle(.sidebar)
-            // Light mode: let the window's tinted glass show instead of the gray sidebar material.
-            .scrollContentBackground(scheme == .light ? .hidden : .automatic)
+    /// A sidebar row's highlight: accent glass while it's the selected one, as in Kuvo Code,
+    /// in place of the list's own gray or solid accent bar.
+    func sidebarRow(selected: Bool) -> some View {
+        listRowBackground(
+            Color.clear
+                .accentGlass(RoundedRectangle(cornerRadius: 8), isOn: selected)
+                .padding(.horizontal, 10)
+        )
     }
 }
 
-/// The sidebar's filter: a search field sized to sit comfortably above the rows.
+private struct SidebarListStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .listStyle(.sidebar)
+            // The window's glass shows through, as it does around the list.
+            .scrollContentBackground(.hidden)
+            .background(NoListHighlight())
+    }
+}
+
+/// Turns off the list's own selection highlight, so only the rows' accent glass marks it.
+private struct NoListHighlight: NSViewRepresentable {
+    func makeNSView(context: Context) -> Probe { Probe() }
+    func updateNSView(_ view: Probe, context: Context) { view.apply() }
+
+    final class Probe: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            // The list's table joins the window after this view.
+            DispatchQueue.main.async { [weak self] in self?.apply() }
+        }
+
+        func apply() {
+            // Up past this view's own host, to the column the list is in.
+            guard window != nil, let root = superview?.superview else { return }
+            let center = convert(NSPoint(x: bounds.midX, y: bounds.midY), to: nil)
+            for table in tables(in: root) where table.selectionHighlightStyle != .none {
+                guard let scroll = table.enclosingScrollView, scroll.convert(scroll.bounds, to: nil).contains(center) else { continue }
+                table.selectionHighlightStyle = .none
+            }
+        }
+
+        private func tables(in view: NSView) -> [NSTableView] {
+            if let table = view as? NSTableView { return [table] }
+            return view.subviews.flatMap(tables)
+        }
+    }
+}
+
+/// The sidebar's filter, sunken into the glass without a border of its own, like Kuvo Code's search.
 private struct FilterField: View {
     @Binding var text: String
     @FocusState private var focused: Bool
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         HStack(spacing: 7) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
             TextField("Filter", text: $text)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
                 .focused($focused)
+                .focusEffectDisabled()
                 .onExitCommand { text = "" }
             if !text.isEmpty {
                 Button { text = "" } label: {
@@ -240,12 +282,10 @@ private struct FilterField: View {
             }
         }
         .padding(.horizontal, 10)
-        .frame(height: 28)
-        .background(.primary.opacity(0.06), in: .rect(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(focused ? Color.accentColor.opacity(0.6) : .primary.opacity(0.08), lineWidth: focused ? 1.5 : 0.5)
-        }
+        .frame(height: 30)
+        // A touch deeper while you type in it.
+        .background((scheme == .dark ? Color.black : Surface.slate).opacity(focused ? 0.05 : 0), in: .rect(cornerRadius: 8))
+        .background(Surface.well(scheme), in: .rect(cornerRadius: 8))
         .contentShape(.rect)
         .onTapGesture { focused = true }
         .animation(.easeOut(duration: 0.15), value: focused)

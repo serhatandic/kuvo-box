@@ -42,13 +42,14 @@ struct ImageList: View {
             }
             if !used.isEmpty {
                 Section("In Use") {
-                    ForEach(used) { ImageRow(image: $0, onRemove: nil).tag($0.id) }
+                    ForEach(used) { ImageRow(image: $0, onRemove: nil).tag($0.id).sidebarRow(selected: selection == $0.id) }
                 }
             }
             if !unused.isEmpty {
                 Section {
                     ForEach(unused) { image in
                         ImageRow(image: image) { confirmRemove = image }.tag(image.id)
+                            .sidebarRow(selected: selection == image.id)
                     }
                 } header: {
                     CleanupHeader(count: unused.count, size: unused.reduce(0) { $0 + $1.size }, noun: "images") { confirmCleanup = unused }

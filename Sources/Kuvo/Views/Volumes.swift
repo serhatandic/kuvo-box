@@ -24,13 +24,14 @@ struct VolumeList: View {
         List(selection: $selection) {
             if !used.isEmpty {
                 Section("In Use") {
-                    ForEach(used) { VolumeRow(volume: $0, onRemove: nil).tag($0.name) }
+                    ForEach(used) { VolumeRow(volume: $0, onRemove: nil).tag($0.name).sidebarRow(selected: selection == $0.name) }
                 }
             }
             if !unused.isEmpty {
                 Section {
                     ForEach(unused) { volume in
                         VolumeRow(volume: volume) { confirmRemove = [volume] }.tag(volume.name)
+                            .sidebarRow(selected: selection == volume.name)
                     }
                 } header: {
                     CleanupHeader(count: unused.count, size: unused.compactMap(\.size).reduce(0, +), noun: "volumes") { confirmRemove = unused }
