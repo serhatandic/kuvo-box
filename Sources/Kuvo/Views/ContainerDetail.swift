@@ -32,10 +32,10 @@ struct ContainerDetail: View {
         .padding([.horizontal, .bottom], 20)
         .padding(.top, 8)
         // Name and status live in the toolbar, next to the actions, like Mail or Xcode.
-        .navigationTitle(container.name)
-        .background { Subtitle(container: container, details: details, busy: busy, archivedAt: archivedAt) }
+        .detailTitle(container.name, icon: "shippingbox.fill") {
+            Subtitle(container: container, details: details, busy: busy, archivedAt: archivedAt)
+        }
         .toolbar {
-            ToolbarItem(placement: .navigation) { TitleIcon(systemName: "shippingbox.fill") }
             ToolbarItemGroup {
                 if let port = container.publishedPorts.first, container.isRunning {
                     Button {
@@ -112,7 +112,7 @@ extension ContainerDetail {
 
 // MARK: - Subtitle
 
-/// "Running for 4 minutes · redis:alpine" under the window title, ticking live.
+/// "Running for 4 minutes · redis:alpine" under the container's name, ticking live.
 private struct Subtitle: View {
     let container: Container
     let details: ContainerDetails?
@@ -122,7 +122,7 @@ private struct Subtitle: View {
     var body: some View {
         TimelineView(UptimeSchedule(start: details?.startedAt ?? .now)) { context in
             let creator = container.creator.map { "  ·  by \($0)" } ?? ""
-            Color.clear.navigationSubtitle("\(status(now: context.date))  ·  \(container.image)\(creator)")
+            Text("\(status(now: context.date))  ·  \(container.image)\(creator)")
         }
     }
 
@@ -145,7 +145,7 @@ private struct Subtitle: View {
 }
 
 /// Ticks only when the uptime text can change: every second for the first minute,
-/// then once a minute. Redrawing the toolbar subtitle re-lays out the window, so a
+/// then once a minute. Redrawing the toolbar's title re-lays out the window, so a
 /// fixed one-second tick kept an idle app busy.
 private struct UptimeSchedule: TimelineSchedule {
     let start: Date

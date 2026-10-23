@@ -134,8 +134,7 @@ struct VolumesDetail: View {
                         Color.clear
                     }
                 }
-                .navigationTitle("Volumes")
-                .toolbar { ToolbarItem(placement: .navigation) { TitleIcon(systemName: "cylinder") } }
+                .detailTitle("Volumes", icon: "cylinder")
             }
         }
         .animation(.snappy(duration: 0.28), value: selection)
@@ -164,10 +163,8 @@ private struct VolumeDetail: View {
             .padding([.horizontal, .bottom], 20)
             .padding(.top, 8)
         }
-        .navigationTitle(volume.displayName)
-        .navigationSubtitle(VolumeStatus(volume: volume, users: users, store: store).verdict)
+        .detailTitle(volume.displayName, icon: "cylinder.fill", detail: VolumeStatus(volume: volume, users: users, store: store).verdict)
         .toolbar {
-            ToolbarItem(placement: .navigation) { TitleIcon(systemName: "cylinder.fill") }
             ToolbarItem {
                 Button { confirmRemove = [volume] } label: { Label("Remove", systemImage: "trash") }
                     .help(users.isEmpty ? "Remove" : removeBlockedHelp(users))

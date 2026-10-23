@@ -46,9 +46,6 @@ enum Surface {
     static let cardRadius: CGFloat = 14
     /// Between the content's card and the window's edges.
     static let gap: CGFloat = 8
-    /// Less at the top: macOS centers the toolbar's title and actions in a row of fixed
-    /// height, and the card's header needs room above them.
-    static let topGap: CGFloat = 3
 
     /// The content's card: white in light mode, a deep cool gray in dark.
     static func cardFill(_ scheme: ColorScheme) -> Color {
@@ -140,8 +137,7 @@ private struct ContentCard: ViewModifier {
                     .fill(Surface.cardFill(scheme))
                     .shadow(color: Surface.cardShadow(scheme), radius: 16, y: 6)
                     .specularRim(shape)
-                    .padding([.horizontal, .bottom], Surface.gap)
-                    .padding(.top, Surface.topGap)
+                    .padding(Surface.gap)
                     .ignoresSafeArea()
             }
     }

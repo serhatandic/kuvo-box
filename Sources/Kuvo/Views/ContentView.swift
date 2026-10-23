@@ -8,6 +8,7 @@ struct ContentView: View {
     @SceneStorage("imageSelection") private var imageSelection: String?
     @SceneStorage("volumeSelection") private var volumeSelection: String?
     @State private var columns = NavigationSplitViewVisibility.all
+    @State private var detailWidth: CGFloat = 0
     @AppStorage(Appearance.key) private var appearance = Appearance.system
 
     private var selected: Container? {
@@ -73,7 +74,14 @@ struct ContentView: View {
                         .navigationSplitViewColumnWidth(min: 250, ideal: 290, max: 420)
                         .background(SidebarWidthLimits(min: 250, max: 420))
                 } detail: {
-                    detail.contentCard()
+                    detail
+                        .contentCard()
+                        // Each detail heads its card with a title of its own (see detailTitle),
+                        // as wide as it can be beside the most actions a detail has.
+                        .toolbar(removing: .title)
+                        .modifier(TrailingActions())
+                        .environment(\.detailTitleRoom, detailWidth - 400)
+                        .onGeometryChange(for: CGFloat.self, of: \.size.width) { detailWidth = $0 }
                 }
                 .focusedSceneValue(\.sidebarSection, $section)
                 .transition(.opacity)
@@ -136,7 +144,7 @@ struct ContentView: View {
                     }
                 }
                 .transition(.opacity)
-                .toolbar { ToolbarItem(placement: .navigation) { TitleIcon(systemName: "shippingbox") } }
+                .detailTitle("Kuvo Box", icon: "shippingbox")
             }
         }
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)

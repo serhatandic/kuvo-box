@@ -194,8 +194,7 @@ struct ImagesDetail: View {
                         Color.clear
                     }
                 }
-                .navigationTitle("Images")
-                .toolbar { ToolbarItem(placement: .navigation) { TitleIcon(systemName: "square.3.layers.3d") } }
+                .detailTitle("Images", icon: "square.3.layers.3d")
             }
         }
         .animation(.snappy(duration: 0.28), value: selection)
@@ -231,10 +230,8 @@ private struct ImageDetail: View {
             .padding([.horizontal, .bottom], 20)
             .padding(.top, 8)
         }
-        .navigationTitle(image.title(users: users))
-        .navigationSubtitle(verdict)
+        .detailTitle(image.title(users: users), icon: "square.3.layers.3d", detail: verdict)
         .toolbar {
-            ToolbarItem(placement: .navigation) { TitleIcon(systemName: "square.3.layers.3d") }
             ToolbarItem {
                 Button { confirmRemove = image } label: { Label("Remove", systemImage: "trash") }
                     .help(users.isEmpty ? "Remove" : removeBlockedHelp(users))

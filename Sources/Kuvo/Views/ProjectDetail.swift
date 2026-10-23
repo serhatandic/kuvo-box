@@ -20,10 +20,8 @@ struct ProjectDetail: View {
         }
         .padding([.horizontal, .bottom], 20)
         .padding(.top, 8)
-        .navigationTitle(project)
-        .navigationSubtitle(summary)
+        .detailTitle(project, icon: "square.stack.3d.up.fill", detail: summary)
         .toolbar {
-            ToolbarItem(placement: .navigation) { TitleIcon(systemName: "square.stack.3d.up.fill") }
             ToolbarItemGroup {
                 Button {
                     store.perform(running.isEmpty ? .start : .stop, onProject: project)

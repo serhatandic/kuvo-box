@@ -326,19 +326,64 @@ private struct PaneSurface: ViewModifier {
     }
 }
 
-/// A glyph beside the window title, like a folder icon in Finder. Every detail
-/// view has one: the toolbar starts its items at the content card's edge, and the
-/// glyph's inset brings it and the title after it inside the card.
-struct TitleIcon: View {
-    let systemName: String
+extension View {
+    /// The detail's icon, name and status, heading the content card. It's also the window's title.
+    func detailTitle(_ title: String, icon: String, detail: String? = nil) -> some View {
+        detailTitle(title, icon: icon) { if let detail { Text(detail) } }
+    }
+
+    func detailTitle<Detail: View>(_ title: String, icon: String, @ViewBuilder detail: () -> Detail) -> some View {
+        navigationTitle(title)
+            .toolbar { ToolbarItem(placement: .navigation) { DetailTitle(icon: icon, title: title, detail: detail()) } }
+    }
+}
+
+/// With the window's own title gone, nothing else pushes the actions after it to the toolbar's
+/// trailing edge: a flexible space, or before macOS 26, an empty centered item.
+struct TrailingActions: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26, *) {
+            content.toolbar { ToolbarSpacer(.flexible) }
+        } else {
+            content.toolbar { ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1).accessibilityHidden(true) } }
+        }
+    }
+}
+
+extension EnvironmentValues {
+    /// How wide the detail's title can be and still leave the toolbar's actions their room.
+    @Entry var detailTitleRoom: CGFloat = 320
+}
+
+/// In the toolbar, where macOS would center the window's own title and subtitle so near the
+/// card's top edge that they touched it: this sits lower, with room above it. The toolbar
+/// starts its items at the card's edge, and the inset brings it inside the card.
+private struct DetailTitle<Detail: View>: View {
+    let icon: String
+    let title: String
+    let detail: Detail
+    @Environment(\.detailTitleRoom) private var room
 
     var body: some View {
-        Image(systemName: systemName)
-            .font(.system(size: 18))
-            .foregroundStyle(.secondary)
-            .frame(width: 28, height: 28)
-            .padding(.leading, 8)
-            .accessibilityHidden(true)
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 18))
+                .foregroundStyle(.secondary)
+                .frame(width: 28, height: 28)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                detail
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+            .lineLimit(1)
+            .truncationMode(.middle)
+        }
+        .padding(.leading, 8)
+        .padding(.top, 12)
+        .frame(maxWidth: max(room, 120), alignment: .leading)
     }
 }
 
